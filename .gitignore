@@ -5,3 +5,4 @@
 src/config.toml
 !.gitignore
 !README.md
+src/__pycache__/**
