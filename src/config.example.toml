@@ -1,0 +1,17 @@
+version = 0 # DO NOT CHANGE
+
+[minecraft]
+host = '127.0.0.1' #default: 127.0.0.1 (localhost)
+rcon_port = 25575 #default: 25575
+rcon_password = '' 
+chat_method = 'managment_server' #for getting messages from minecraft. Options: 'sftp'(not implemented)', 'managment_server'(default)
+managment_server_port = 25585 #only required if chat_method is 'managment_server' (default: 25585)
+managment_server_secret = '' #only required if chat_method is 'managment_server'
+
+
+[discord]
+token = ''  # only required if use_webhook is false
+channel_id = '' #required
+use_webhook = true #default: true
+webhook_url = '' #required if use_webhook is true 
+
