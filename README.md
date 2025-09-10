@@ -12,4 +12,11 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 ## Planned Features
 - [ ] Management server
   - [ ] Receiving Minecraft messages
-  - [ ] Sending messages
+  - [ ] Sending messages to Minecraft via discord bot
+
+- [ ] RCon server
+  - [ ] Sending messages to Minecraft 
+
+- [ ] Discord
+  - [ ] Whitelisting memebers
+  
