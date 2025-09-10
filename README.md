@@ -8,3 +8,8 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 2. edit the config.toml with settings for your server
 3. install dependencies: `pip install -r requirements.txt`
 4. run the script: `python main.py`
+
+## Planned Features
+- [ ] Management server
+  - [ ] Receiving Minecraft messages
+  - [ ] Sending messages
