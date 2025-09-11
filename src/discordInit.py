@@ -3,8 +3,6 @@ import discord, os
 
 def discordInit(token):
     bot = discord.Bot(intents=discord.Intents.all())
-    bot.run(token)
-
     
     cog_list = [f[:-3] for f in os.listdir("./discordCogs") if f.endswith(".py")]
     
@@ -13,6 +11,9 @@ def discordInit(token):
     
     @bot.event
     async def on_ready():
-        print('We have logged in as {0.user}'.format(bot))
-
+        print('Logged in as {0.user}'.format(bot))
+        await bot.sync_commands()
+        print('Synced commands!')
+    
+    bot.run(token)
     return bot
