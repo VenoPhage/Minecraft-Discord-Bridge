@@ -6,8 +6,8 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 
 1. rename the config.example.toml to config.toml
 2. edit the config.toml with settings for your server
-3. install dependencies: `pip install -r requirements.txt`
-4. run the script: `python main.py`
+3. install dependencies: `pip install -r requirements.txt` (recommended to run in a venv)
+4. run the script: `python main.py` (should work with most python versions, developed on python 3.13.5)
 
 ## Planned Features (in no particular order)
 - [ ] Management server
