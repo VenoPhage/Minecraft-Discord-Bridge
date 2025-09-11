@@ -16,5 +16,5 @@ match config['version']:
     case _:
         exit(f"Unknown version {config['version']}")
 
-bot = discordInit(config['discord']['token'])
+discordInit(config['discord']['token'])
     
