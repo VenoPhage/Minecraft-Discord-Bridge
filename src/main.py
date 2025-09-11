@@ -2,7 +2,6 @@ import toml, os
 from discordInit import *
 
 
-
 if os.path.exists('src'):
     os.chdir('src')
 if not os.path.exists('main.py'):
@@ -12,6 +11,5 @@ with open('config.toml') as f:
     config = toml.load(f)
 
 
-if config['discord']['use_webhook'] == False:
-    bot = discordInit(config['discord']['token'])
+bot = discordInit(config['discord']['token'])
     
