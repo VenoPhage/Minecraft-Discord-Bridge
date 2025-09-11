@@ -19,7 +19,12 @@ This script runs completely remotely from a Minecraft server, making it perfect 
     - [ ] Sending messages to Minecraft 
 
 - [ ] Discord
+    - [ ] /List command
+        - [x] Running command
+        - [ ] Formatting
     - [ ] Whitelisting members
         - [ ] Trusted members whitelisting
+
+
 
   
