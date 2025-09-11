@@ -7,3 +7,4 @@ src/config.toml
 !README.md
 src/__pycache__/**
 src/discordCogs/__pycache__/**
+!requirements.txt
