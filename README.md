@@ -9,14 +9,17 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 3. install dependencies: `pip install -r requirements.txt`
 4. run the script: `python main.py`
 
-## Planned Features
+## Planned Features (in no particular order)
 - [ ] Management server
-  - [ ] Receiving Minecraft messages
-  - [ ] Sending messages to Minecraft via discord bot
+    - [ ] Secure connection
+    - [ ] Receiving Minecraft messages
+    - [ ] Sending messages to Minecraft (maybe RCon might be better?)
 
 - [ ] RCon server
-  - [ ] Sending messages to Minecraft 
+    - [ ] Sending messages to Minecraft 
 
 - [ ] Discord
-  - [ ] Whitelisting memebers
+    - [ ] Whitelisting members
+        - [ ] Trusted members whitelisting
+
   
