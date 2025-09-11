@@ -11,7 +11,7 @@ with open('config.toml') as f:
     config = toml.load(f)
 
 match config['version']:
-    case '0':
+    case 0:
         pass # config updating will happen once things are functional
     case _:
         exit(f"Unknown version {config['version']}")
