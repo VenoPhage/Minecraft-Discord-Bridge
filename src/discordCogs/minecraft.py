@@ -1,6 +1,5 @@
 import discord, toml
 from discord.ext import commands
-from utils.functions import functions as utils
 from mcrcon import MCRcon
 
 class minecraft(commands.Cog): # create a class for our cog that inherits from commands.Cog
@@ -13,10 +12,15 @@ class minecraft(commands.Cog): # create a class for our cog that inherits from c
     async def list(self, ctx):
         with open ('config.toml') as f:
             config = toml.load(f)
-        rcon_ip = config['minecraft']['rcon_ip']
-        rcon_port = config['minecraft']['rcon_port']
-        rcon_pass = config['minecraft']['rcon_password']
-        with MCRcon(f'{rcon_ip}:{rcon_port}', rcon_port, rcon_pass) as mcr:
+        rcon_ip = config['minecraft']['rcon']['host']
+        rcon_port = config['minecraft']['rcon']['port']
+        rcon_pass = config['minecraft']['rcon']['password']
+        
+        if rcon_ip == '0':
+            rcon_ip = config['minecraft']['host']
+
+
+        with MCRcon(rcon_ip, rcon_pass, rcon_port) as mcr:
             list = mcr.command('list')
         
         await ctx.respond(list)
