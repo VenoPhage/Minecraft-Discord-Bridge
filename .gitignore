@@ -6,3 +6,4 @@ src/config.toml
 !.gitignore
 !README.md
 src/__pycache__/**
+src/discordCogs/__pycache__/**
