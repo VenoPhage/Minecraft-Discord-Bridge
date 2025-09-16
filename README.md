@@ -11,21 +11,21 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 No features fully complete yet
 
 ## Planned Features (in no particular order)
-- [ ] Management server
-    - [ ] Secure connection
-    - [ ] Receiving Minecraft messages
-    - [ ] Sending messages to Minecraft (maybe RCon might be better?)
-
-- [ ] RCon server
-    - [ ] Sending messages to Minecraft 
+- [ ] Bridge Chat
+    - [ ] Management server
+        - [ ] Secure connection
+        - [ ] Receiving Minecraft messages
+        - [ ] Sending messages to Minecraft (maybe RCon might be better?)
+    - [ ] RCon server
+        - [ ] Sending messages to Minecraft 
 
 - [ ] Discord
-    - [ ] /List command
-        - [x] Running command
-        - [ ] Formatting
+    - [ ] Commands
+        - [ ] /map
+            - [ ] research options
+        - [ ] /List 
+            - [x] Running command
+            - [ ] Formatting
     - [ ] Whitelisting members
         - [ ] Trusted members whitelisting
 
-
-
-  
