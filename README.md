@@ -1,6 +1,9 @@
 # Minecraft Vanilla Discord Bridge Chat
 This script runs completely remotely from a Minecraft server, making it perfect for dedicated servers, or even when you're just running vanilla (especially great for snapshot servers).
 
+## Requirements
+- Python 3.10.11
+
 ## Setup
 1. install dependencies: `pip install -r requirements.txt` (recommended to run in a venv)
 2. run the script `python main.py` this will create the `config.toml` file and stop the script
@@ -8,22 +11,18 @@ This script runs completely remotely from a Minecraft server, making it perfect 
 4. run the script again `python main.py` (this is now your startup command)
 
 ## Features
-No features fully complete yet
-
-## Planned Features (in no particular order)
-- [ ] Bridge Chat
+- [X] Bridge Chat
     - [ ] Management server
         - [ ] Secure connection
-        - [ ] Receiving Minecraft messages
-        - [ ] Sending messages to Minecraft (maybe RCon might be better?)
-    - [ ] RCon server
-        - [ ] Sending messages to Minecraft 
+        - [ ] Receiving Minecraft events
+    - [X] RCon server
+        - [X] Sending messages to Minecraft 
 
-- [ ] Discord
-    - [ ] Commands
+- [X] Discord
+    - [X] Commands
         - [ ] /map
             - [ ] research options
-        - [ ] /List 
+        - [X] /List 
             - [x] Running command
             - [ ] Formatting
     - [ ] Whitelisting members
