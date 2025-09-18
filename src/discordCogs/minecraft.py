@@ -100,7 +100,11 @@ class minecraft(commands.Cog):
         rconConf = getRconConfig()
         with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
             mcr.command(
-                f'tellraw "[DISCORD] <{message.author.name}> {message.content}"'
+                'tellraw @a \{text:"[DISCORD] <'
+                + message.author
+                + ">"
+                + message.content
+                + '"}'
             )
 
     @tasks.loop(seconds=1)
