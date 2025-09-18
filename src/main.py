@@ -2,22 +2,22 @@ import toml, os
 from discordInit import *
 
 
-if os.path.exists('src'):
-    os.chdir('src')
-if not os.path.exists('main.py'):
+if os.path.exists("src"):
+    os.chdir("src")
+if not os.path.exists("main.py"):
     exit("main.py not found, check if you are in the correct directory")
 try:
-    with open('config.toml') as f:
+    with open("config.toml") as f:
         config = toml.load(f)
 except FileNotFoundError:
     config = {"version": -1}
-    with open('config.toml', 'w') as f:
+    with open("config.toml", "w") as f:
         f.write(toml.dumps(config))
 
 
-match config['version']:
+match config["version"]:
     case 0:
-        pass 
+        pass
     case _:
         toml_string = """version = 0 # DO NOT CHANGE
 
@@ -48,9 +48,9 @@ token = ''  #required
 channel_id = '' #required
 webhook_url = '' #required if use_webhook is true  
 """
-        with open('config.toml', 'w') as f:
+        with open("config.toml", "w") as f:
             f.write(toml_string)
         exit("config.toml created, please edit it and run the script again")
 
-discordInit(config['discord']['token'])
-    
+
+discordInit(config["discord"]["token"])
