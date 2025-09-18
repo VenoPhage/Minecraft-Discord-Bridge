@@ -8,3 +8,5 @@ src/config.toml
 src/__pycache__/**
 src/discordCogs/__pycache__/**
 !requirements.txt
+src/data/**
+src/utils/__pycache__/**
