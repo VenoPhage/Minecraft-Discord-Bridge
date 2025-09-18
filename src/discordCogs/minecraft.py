@@ -99,7 +99,9 @@ class minecraft(commands.Cog):
 
         rconConf = getRconConfig()
         with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
-            mcr.command(f"tell [DISCORD]{message.author.name}: {message.content}")
+            mcr.command(
+                f'tellraw "[DISCORD] <{message.author.name}> {message.content}"'
+            )
 
     @tasks.loop(seconds=1)
     async def fetchLogsLoop(self):
