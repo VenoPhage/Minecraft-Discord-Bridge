@@ -99,15 +99,12 @@ class minecraft(commands.Cog):
             print(f"{message.channel.id} != {config['discord']['channel_id']}")
             return
 
-        command = (
-            f'tellraw @a {{text: "[DISCORD] <{message.author.name}> {message.content}}}'
-        )
-        print(command)
         rconConf = getRconConfig()
 
         with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
-
-            mcr.command(command)
+            mcr.command(
+                f'tellraw @a {{text:"[DISCORD] <{message.author.name}> {message.content}"}}'
+            )
 
     @tasks.loop(seconds=1)
     async def fetchLogsLoop(self):
