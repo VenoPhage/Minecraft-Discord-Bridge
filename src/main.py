@@ -32,7 +32,7 @@ port = 25585 #default: 25585
 secret = ''
 
 [minecraft.sftp]
-host = '' #default: 0 (0 uses minecraft host)
+host = '0' #default: 0 (0 uses minecraft host)
 port = 22 #default: 22
 username = ''
 password = ''
