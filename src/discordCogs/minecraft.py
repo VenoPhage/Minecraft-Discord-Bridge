@@ -94,18 +94,20 @@ class minecraft(commands.Cog):
 
         with open("config.toml") as f:
             config = toml.load(f)
-        if message.channel.id != config["discord"]["channel_id"]:
+
+        if int(config["discord"]["channel_id"]) != message.channel.id:
+            print(f"{message.channel.id} != {config['discord']['channel_id']}")
             return
 
+        command = (
+            f'tellraw @a {{text: "[DISCORD] <{message.author.name}> {message.content}}}'
+        )
+        print(command)
         rconConf = getRconConfig()
+
         with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
-            mcr.command(
-                'tellraw @a \{text:"[DISCORD] <'
-                + message.author
-                + ">"
-                + message.content
-                + '"}'
-            )
+
+            mcr.command(command)
 
     @tasks.loop(seconds=1)
     async def fetchLogsLoop(self):
