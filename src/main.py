@@ -6,6 +6,10 @@ if os.path.exists("src"):
     os.chdir("src")
 if not os.path.exists("main.py"):
     exit("main.py not found, check if you are in the correct directory")
+
+if not os.path.exists("data"):
+    os.makedirs("data")
+
 try:
     with open("config.toml", "r") as f:
         toml = f.read()

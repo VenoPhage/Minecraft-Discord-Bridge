@@ -42,9 +42,6 @@ class minecraft(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        if not os.path.exists("data"):
-            os.makedirs("data")
-
         self.message_tracker = MinecraftLogProcessor()
         self.fetchLogsLoop.start()
         self.checkServerUpdates.start()
