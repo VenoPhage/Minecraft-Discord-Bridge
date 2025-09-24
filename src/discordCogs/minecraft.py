@@ -47,6 +47,7 @@ class minecraft(commands.Cog):
 
         self.message_tracker = MinecraftLogProcessor()
         self.fetchLogsLoop.start()
+        self.checkServerUpdates.start()
 
     @discord.slash_command()
     async def list(self, ctx):
