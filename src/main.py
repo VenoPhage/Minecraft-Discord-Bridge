@@ -1,56 +1,37 @@
-import toml, os
-from discordInit import *
-
+import os, discord
+import tomlkit as tk
+from pathlib import Path
 
 if os.path.exists("src"):
     os.chdir("src")
 if not os.path.exists("main.py"):
     exit("main.py not found, check if you are in the correct directory")
 try:
-    with open("config.toml") as f:
-        config = toml.load(f)
-except FileNotFoundError:
-    config = {"version": -1}
-    with open("config.toml", "w") as f:
-        f.write(toml.dumps(config))
+    with open("config.toml", "r") as f:
+        toml = f.read()
+except:
+    toml = None
+
+cDoc = tk.parse(toml)
+
+try:
+    token = cDoc["Discord"]["Token"]
+except:
+    DCtab = tk.table()
+    DCtab.add("Token", "")
+    DCtab["Token"].comment("Required")
+    cDoc["Discord"] = DCtab
+    token = None
+
+if token == None:
+    token = input("Enter Discord bot Token:")
 
 
-match config["version"]:
-    case 0:
-        pass
-    case _:
-        toml_string = """version = 0 # DO NOT CHANGE
-
-[minecraft]
-host = '127.0.0.1' #default: 127.0.0.1
-chat_method_get = 'sftp' #for getting messages from minecraft. Options: 'sftp', 'management_server' (maybe)
-chat_method_send = 'rcon' #for sending messages to minecraft. Options: 'rcon', 'management_server' (maybe)
-
-[minecraft.management_server]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 25585 #default: 25585
-secret = ''
-
-[minecraft.sftp]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 22 #default: 22
-username = ''
-password = ''
-
-[minecraft.rcon]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 25575 #default: 25575
-password = ''
-
-[discord]
-use_webhook = true #default: true
-token = ''  #required
-channel_id = '' #required
-webhook_url = '' #required if use_webhook is true  
-"""
-        with open("config.toml", "w") as f:
-            f.write(toml_string)
-        exit("config.toml created, please edit it and run the script again")
-
-
-discordInit(config["discord"]["token"])
+bot = discord.Bot(intents=discord.Intents.all())
+cog_list = [
+    str(p.relative_to(Path("./discordCogs")).with_suffix("")).replace("/", ".")
+    for p in Path("./discordCogs").rglob("*.py")
+]
+for cog in cog_list:
+    bot.load_extension(f"discordCogs.{cog}")
+bot.run(token)
