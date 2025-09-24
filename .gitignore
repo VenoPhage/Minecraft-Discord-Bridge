@@ -10,3 +10,5 @@ src/discordCogs/__pycache__/**
 !requirements.txt
 src/data/**
 src/utils/__pycache__/**
+src/fabric/
+src/fabric/**

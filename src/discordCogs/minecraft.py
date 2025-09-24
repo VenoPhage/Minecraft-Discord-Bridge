@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 from mcrcon import MCRcon
 from utils.functions import getRconConfig, getSFTPConfig
 from discord import Webhook
-import aiohttp
+import aiohttp, requests
 
 
 class MinecraftLogProcessor:
@@ -105,6 +105,49 @@ class minecraft(commands.Cog):
                 f'tellraw @a {{text:"[DISCORD] <{message.author.name}> {message.content}"}}'
             )
 
+    @tasks.loop(hours=1)
+    async def checkServerUpdates():
+        with open("data/currentVersion.txt") as f:
+            currentVersion = f.read()
+        versionsURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+        versionsManifest = requests.get(versionsURL).json()
+        if versionsManifest["versions"][0]["id"] == currentVersion:
+            return
+        latestURL = versionsManifest["versions"][0]["url"]
+        snapshotManifest = requests.get(latestURL).json()
+        serverDownloadURL = snapshotManifest["downloads"]["server"]["url"]
+        server = requests.get(serverDownloadURL).content
+        with open("server.jar", "wb") as f:
+            f.write(server)
+
+        rconConf = getRconConfig()
+
+        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
+            mcr.command("stop")
+
+        sftpConf = getSFTPConfig()
+
+        with paramiko.SSHClient() as ssh:
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(
+                sftpConf["host"],
+                username=sftpConf["username"],
+                password=sftpConf["password"],
+                port=sftpConf["port"],
+            )
+            with ssh.open_sftp() as sftp:
+                sftp.put("server.jar", "server.jar")
+
+        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
+            mcr.command("start")
+
+        # save current installed version
+        currentVersion = snapshotManifest["id"]
+        with open("data/currentVersion.txt", "w") as f:
+            f.write(str(currentVersion))
+        # delete old server.jar
+        os.remove("server.jar")
+
     @tasks.loop(seconds=1)
     async def fetchLogsLoop(self):
         rconConf = getRconConfig()
@@ -195,4 +238,5 @@ class minecraft(commands.Cog):
 
 
 def setup(bot):
+
     bot.add_cog(minecraft(bot))
