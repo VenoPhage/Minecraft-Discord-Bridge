@@ -96,7 +96,6 @@ class minecraft(commands.Cog):
             config = toml.load(f)
 
         if int(config["discord"]["channel_id"]) != message.channel.id:
-            print(f"{message.channel.id} != {config['discord']['channel_id']}")
             return
 
         rconConf = getRconConfig()
