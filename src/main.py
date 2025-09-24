@@ -1,25 +1,8 @@
-import toml, os
+import toml, tomlkit, os
 from discordInit import *
 
-
-if os.path.exists("src"):
-    os.chdir("src")
-if not os.path.exists("main.py"):
-    exit("main.py not found, check if you are in the correct directory")
-try:
-    with open("config.toml") as f:
-        config = toml.load(f)
-except FileNotFoundError:
-    config = {"version": -1}
-    with open("config.toml", "w") as f:
-        f.write(toml.dumps(config))
-
-
-match config["version"]:
-    case 0:
-        pass
-    case _:
-        toml_string = """version = 0 # DO NOT CHANGE
+currentVersion = 1
+base_toml_string = """version = 0 # DO NOT CHANGE
 
 [minecraft]
 host = '127.0.0.1' #default: 127.0.0.1
@@ -48,9 +31,47 @@ token = ''  #required
 channel_id = '' #required
 webhook_url = '' #required if use_webhook is true  
 """
-        with open("config.toml", "w") as f:
-            f.write(toml_string)
-        exit("config.toml created, please edit it and run the script again")
 
+if os.path.exists("src"):
+    os.chdir("src")
+if not os.path.exists("main.py"):
+    exit("main.py not found, check if you are in the correct directory")
 
+try:
+    with open("config.toml", "r") as f:
+        config = toml.loads(f.read())
+except:
+    with open("config.toml", "w") as f:
+        f.write(base_toml_string)
+    with open("config.toml", "r") as f:
+        config = toml.loads(f.read())
+if "version" not in config:
+    with open("config.toml", "w") as f:
+        f.write(base_toml_string)
+    with open("config.toml", "r") as f:
+        config = toml.loads(f.read())
+while config["version"] != currentVersion:
+    with open("config.toml", "r") as f:
+        configDoc = tomlkit.parse(f.read())
+    match configDoc["version"]:
+        case 1:
+            pass
+        case 0:
+            tab = tomlkit.table()
+            tab.add("whitelist_role_id", 0)
+            tab.add("waiting_channel_id", 0)
+            tab.add("whitelist_manager_role_id", 0)
+            tab.add(
+                "waiting_message",
+                "Hello {@user}! Please wait for a {@whitelist_role} to whitelist you.\nIf you want to speed up the process, click the button below.",
+            )
+
+            configDoc["discord.management"] = tab
+            configDoc["version"] = 1
+
+    with open("config.toml", "w") as f:
+        f.write(tomlkit.dumps(configDoc))
+
+if len(config["discord"]["token"]) < 10:
+    exit("No token found in config.toml")
 discordInit(config["discord"]["token"])
