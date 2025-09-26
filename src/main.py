@@ -12,11 +12,13 @@ if not os.path.exists("data"):
 
 try:
     with open("config.toml", "r") as f:
-        toml = f.read()
-except:
-    toml = None
-
-cDoc = tk.parse(toml)
+        cDoc = tk.parse(f.read())
+except FileNotFoundError:
+    cDoc = tk.document()  # file doesnt exist, so create one
+except Exception as e:
+    exit(
+        f"Error reading or parsing config.toml, suggested fix rename config.toml and restart\nException:\n{e}"
+    )
 
 try:
     token = cDoc["Discord"]["Token"]
@@ -29,6 +31,9 @@ except:
 
 if token == None:
     token = input("Enter Discord bot Token:")
+    cDoc["Discord"]["Token"] = token
+    with open("config.toml", "w") as f:
+        f.write(tk.dumps(cDoc))
 
 
 bot = discord.Bot(intents=discord.Intents.all())
