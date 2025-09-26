@@ -1,6 +1,5 @@
 import os, discord
 import tomlkit as tk
-from pathlib import Path
 
 if os.path.exists("src"):
     os.chdir("src")  # if running from base instead of source
@@ -31,18 +30,19 @@ except:  # no token in config
     cDoc["Discord"] = DCtab
     token = None
 
-if token == None:
+
+bot = discord.Bot(intents=discord.Intents.all())
+
+bot.load_extension("discordCogs.core")
+
+try:
+    bot.run(token)
+except (TypeError, discord.LoginFailure):
     token = input("Enter Discord bot Token:")
     cDoc["Discord"]["Token"] = token
     with open("config.toml", "w") as f:
         f.write(tk.dumps(cDoc))
-
-
-bot = discord.Bot(intents=discord.Intents.all())
-cog_list = [
-    str(p.relative_to(Path("./discordCogs")).with_suffix("")).replace("/", ".")
-    for p in Path("./discordCogs").rglob("*.py")
-]
-for cog in cog_list:
-    bot.load_extension(f"discordCogs.{cog}")
-bot.run(token)
+except Exception as e:
+    exit(f"Unhandled exception\n{e}")
+finally:
+    bot.run(token)
