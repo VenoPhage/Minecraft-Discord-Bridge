@@ -3,12 +3,14 @@ import tomlkit as tk
 from pathlib import Path
 
 if os.path.exists("src"):
-    os.chdir("src")
+    os.chdir("src")  # if running from base instead of source
 if not os.path.exists("main.py"):
-    exit("main.py not found, check if you are in the correct directory")
+    exit(
+        "main.py not found, check if you are in the correct directory"
+    )  # if this doesn't exist running dir is bad
 
 if not os.path.exists("data"):
-    os.makedirs("data")
+    os.makedirs("data")  # not included in git so its created
 
 try:
     with open("config.toml", "r") as f:
@@ -18,11 +20,11 @@ except FileNotFoundError:
 except Exception as e:
     exit(
         f"Error reading or parsing config.toml, suggested fix rename config.toml and restart\nException:\n{e}"
-    )
+    )  # unknown error, just exit and allow user to diagnose
 
 try:
     token = cDoc["Discord"]["Token"]
-except:
+except:  # no token in config
     DCtab = tk.table()
     DCtab.add("Token", "")
     DCtab["Token"].comment("Required")
