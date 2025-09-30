@@ -1,5 +1,5 @@
 import os, discord
-import tomlkit as tk
+import utils.functions as func
 
 if os.path.exists("src"):
     os.chdir("src")  # if running from base instead of source
@@ -12,24 +12,20 @@ if not os.path.exists("data"):
     os.makedirs("data")  # not included in git so its created
 
 try:
-    with open("config.toml", "r") as f:
-        cDoc = tk.parse(f.read())
-except FileNotFoundError:
-    cDoc = tk.document()  # file doesnt exist, so create one
+    cDoc = func.get_conf()
+except FileNotFoundError:  # file doesnt exist, so create one
+    with open("config.toml", "a"):
+        pass
 except Exception as e:
     exit(
         f"Error reading or parsing config.toml, suggested fix rename config.toml and restart\nException:\n{e}"
     )  # unknown error, just exit and allow user to diagnose
 
 try:
-    token = cDoc["Discord"]["Token"]
-except:  # no token in config
-    DCtab = tk.table()
-    DCtab.add("Token", "")
-    DCtab["Token"].comment("Required")
-    cDoc["Discord"] = DCtab
-    token = None
-
+    token = func.get_conf(keys=["Discord", "Token"])
+except:
+    token = input("Enter Discord bot Token:")
+    func.conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
 
 bot = discord.Bot(intents=discord.Intents.all())
 
@@ -39,9 +35,7 @@ try:
     bot.run(token)
 except (TypeError, discord.LoginFailure):
     token = input("Enter Discord bot Token:")
-    cDoc["Discord"]["Token"] = token
-    with open("config.toml", "w") as f:
-        f.write(tk.dumps(cDoc))
+    func.conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
 except Exception as e:
     exit(f"Unhandled exception\n{e}")
 finally:

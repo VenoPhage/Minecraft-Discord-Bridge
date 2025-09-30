@@ -1,9 +1,10 @@
 import discord, toml, paramiko, re, os, json, hashlib
 from discord.ext import commands, tasks
 from mcrcon import MCRcon
-from utils.functions import getRconConfig, getSFTPConfig
 from discord import Webhook
 import aiohttp, requests
+import utils.functions as util
+from utils.exception import *
 
 
 class MinecraftLogProcessor:
@@ -41,76 +42,85 @@ class minecraft(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
         self.message_tracker = MinecraftLogProcessor()
-        self.fetchLogsLoop.start()
         self.checkServerUpdates.start()
 
     @discord.slash_command()
     async def list(self, ctx):
-        rcon = getRconConfig()
+        rcon = util.get_conf(["Minecraft", "rcon"])
+        if rcon is None:  # TODO check for other configs
+            return
         with MCRcon(rcon["host"], rcon["password"], rcon["port"]) as mcr:
             list = mcr.command("list")
 
         await ctx.respond(list)
 
-    @discord.slash_command(
-        name="resync",
-        description="[OWNER ONLY] resyncs the channel. (currently only deletes and recreates the channel)",
-    )
+    ### TODO Update to new config
+    # @discord.slash_command(
+    #    name="resync",
+    #    description="[OWNER ONLY] resyncs the channel. (currently only deletes and recreates the channel)",
+    # )
+    # @commands.is_owner()
+    # async def resync(self, ctx):
+    #    # delete and recreate channel and fetch all logs
+    #    self.fetchLogsLoop.stop()
+    #    with open("config.toml") as f:
+    #        config = toml.load(f)
+    #    oldChannel = self.bot.get_channel(config["discord"]["channel_id"])
+    #
+    #    newChannel = await ctx.guild.create_text_channel(
+    #        name=oldChannel.name,
+    #        overwrites=oldChannel.overwrites,
+    #        category=oldChannel.category,
+    #        position=oldChannel.position,
+    #        topic=oldChannel.topic,
+    #        slowmode_delay=oldChannel.slowmode_delay,
+    #        nsfw=oldChannel.nsfw,
+    #        reason="resync",
+    #    )
+    #    await oldChannel.delete(reason="resync")
+    #
+    #    config["discord"]["channel_id"] = newChannel.id
+    #    with open("config.toml", "w") as f:
+    #        f.write(toml.dumps(config))
+    #
+    #    self.fetchLogsLoop.start()
+    #    await ctx.respond("resynced")
+
+    @discord.slash_command()
     @commands.is_owner()
-    async def resync(self, ctx):
-        # delete and recreate channel and fetch all logs
-        self.fetchLogsLoop.stop()
-        with open("config.toml") as f:
-            config = toml.load(f)
-        oldChannel = self.bot.get_channel(config["discord"]["channel_id"])
-
-        newChannel = await ctx.guild.create_text_channel(
-            name=oldChannel.name,
-            overwrites=oldChannel.overwrites,
-            category=oldChannel.category,
-            position=oldChannel.position,
-            topic=oldChannel.topic,
-            slowmode_delay=oldChannel.slowmode_delay,
-            nsfw=oldChannel.nsfw,
-            reason="resync",
-        )
-        await oldChannel.delete(reason="resync")
-
-        config["discord"]["channel_id"] = newChannel.id
-        with open("config.toml", "w") as f:
-            f.write(toml.dumps(config))
-
-        self.fetchLogsLoop.start()
-        await ctx.respond("resynced")
+    async def update(self, ctx):
+        self.checkServerUpdates
+        await ctx.respond("Checking for updates...")
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
-
-        with open("config.toml") as f:
-            config = toml.load(f)
-
-        if int(config["discord"]["channel_id"]) != message.channel.id:
+        rcon = util.get_conf(["Minecraft", "rcon"])
+        if rcon is None:
             return
 
-        rconConf = getRconConfig()
-
-        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
+        with MCRcon(rcon["host"], rcon["password"], rcon["port"]) as mcr:
             mcr.command(
                 f'tellraw @a {{text:"[DISCORD] <{message.author.name}> {message.content}"}}'
             )
 
     @tasks.loop(hours=1)
-    async def checkServerUpdates():
-        with open("data/currentVersion.txt") as f:
-            currentVersion = f.read()
+    async def checkServerUpdates(self):  # TODO Cut down function
+        print("Checking for updates...")
+        try:
+            with open("data/currentVersion.txt") as f:
+                currentVersion = f.read()
+        except:
+            currentVersion = None
+        print(f"Current version is {currentVersion}")
         versionsURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
         versionsManifest = requests.get(versionsURL).json()
-        if versionsManifest["versions"][0]["id"] == currentVersion:
+        latestVersion = versionsManifest["versions"][0]["id"]
+        if latestVersion == currentVersion:
             return
+        print(f"Current version doesnt match latest {latestVersion}")
         latestURL = versionsManifest["versions"][0]["url"]
         snapshotManifest = requests.get(latestURL).json()
         serverDownloadURL = snapshotManifest["downloads"]["server"]["url"]
@@ -118,56 +128,82 @@ class minecraft(commands.Cog):
         with open("server.jar", "wb") as f:
             f.write(server)
 
-        rconConf = getRconConfig()
+        rcon = util.get_conf(["Minecraft", "rcon"])
+        if rcon is None:
+            return
+        print("ensuring server is offline")
+        try:
+            with MCRcon(rcon["host"], rcon["password"], rcon["port"]) as mcr:
+                mcr.command("stop")
+        except:
+            pass  # server is probably offline already
 
-        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
-            mcr.command("stop")
-
-        sftpConf = getSFTPConfig()
-
+        sftp = util.get_conf(["Minecraft", "sftp"])
+        if sftp is None:
+            return
+        print("uploading new server.jar")
         with paramiko.SSHClient() as ssh:
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(
-                sftpConf["host"],
-                username=sftpConf["username"],
-                password=sftpConf["password"],
-                port=sftpConf["port"],
+                sftp["host"],
+                username=sftp["username"],
+                password=sftp["password"],
+                port=sftp["port"],
             )
             with ssh.open_sftp() as sftp:
                 sftp.put("server.jar", "server.jar")
 
-        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
-            mcr.command("start")
+        print("Server jar uploaded attempting to start up server")
+        api = util.get_conf(["Minecraft", "panel"])
+        headers = {
+            "Authorization": f"Bearer {api['api_key']}",
+            "Content-Type": "application/json",
+            "Accept": "Application/vnd.pterodactyl.v1+json",
+        }
 
-        # save current installed version
+        response = requests.get(api["url"], headers=headers)
+        print(response)
+
+        power_url = f"{api['url']}/api/client/servers/{api['server_id']}/power"
+        power_data = {"signal": "start"}
+
+        power_response = requests.post(power_url, headers=headers, json=power_data)
+
+        if power_response.status_code == 204:
+            print("Server start command sent successfully!")
+        else:
+            print(f"Error: {power_response.status_code} - {power_response.text}")
         currentVersion = snapshotManifest["id"]
         with open("data/currentVersion.txt", "w") as f:
             f.write(str(currentVersion))
-        # delete old server.jar
         os.remove("server.jar")
 
     @tasks.loop(seconds=1)
     async def fetchLogsLoop(self):
-        rconConf = getRconConfig()
+        rcon = util.get_conf(["Minecraft", "rcon"])
+        if rcon is None:
+            return
 
         # check for players online
-        with MCRcon(rconConf["host"], rconConf["password"], rconConf["port"]) as mcr:
+        with MCRcon(rcon["host"], rcon["password"], rcon["port"]) as mcr:
             listOutput = mcr.command("list")
             playerCount = re.search(r"\d+", listOutput).group(0)
         if playerCount == "0":
             return  # no players online so no need to look for messages
 
-        sftpConf = getSFTPConfig()
+        sftp = util.get_conf(["Minecraft", "sftp"])
+        if sftp is None:
+            return
 
         # fetch latest log
         try:
             with paramiko.SSHClient() as ssh:
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 ssh.connect(
-                    sftpConf["host"],
-                    username=sftpConf["username"],
-                    password=sftpConf["password"],
-                    port=sftpConf["port"],
+                    sftp["host"],
+                    username=sftp["username"],
+                    password=sftp["password"],
+                    port=sftp["port"],
                 )
                 with ssh.open_sftp() as sftp:
                     sftp.get("logs/latest.log", "data/latest.log")
@@ -186,9 +222,6 @@ class minecraft(commands.Cog):
 
             self.message_tracker.processed_messages = set()
             self.message_tracker.save_state()
-
-        with open("config.toml") as f:
-            config = toml.load(f)
 
         new_messages = []
 
@@ -216,12 +249,16 @@ class minecraft(commands.Cog):
             with open("data/lastPosition.txt", "w") as pos_file:
                 pos_file.write(str(f.tell()))
 
+        discord = util.get_conf(["Discord"])
+        if discord is None:
+            return
+
         for timestamp, username, message, message_hash in new_messages:
             try:
-                if config["discord"]["use_webhook"] == True:
+                if discord["use_webhook"] == True:
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(
-                            config["discord"]["webhook_url"], session=session
+                            discord["webhook_url"], session=session
                         )
                         await webhook.send(
                             content=message,
@@ -229,12 +266,18 @@ class minecraft(commands.Cog):
                             avatar_url=f"https://minotar.net/avatar/{username}/100.png",
                         )
                 else:
-                    channel = self.bot.get_channel(config["discord"]["channel_id"])
+                    channel = self.bot.get_channel(discord["channel_id"])
                     await channel.send(f"{username}: {message}")
             except Exception as e:
                 print(f"Error sending message: {e}")
 
 
 def setup(bot):
-
+    # try:
+    #    mcConf = util.get_conf(["Minecraft"])
+    # except KeyError:
+    #    raise SetupError(
+    #        "Minecraft config does not exist, please run `/setup minecraft`"
+    #    )
+    # else:
     bot.add_cog(minecraft(bot))

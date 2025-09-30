@@ -1,7 +1,8 @@
-import discord, sqlite3
-import tomlkit as tk
+import discord
 from discord.ext import commands
-from pathlib import Path
+import utils.functions as func
+from discord.commands import option, OptionChoice
+from utils.exception import *
 
 
 class core(commands.Cog):
@@ -9,53 +10,150 @@ class core(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get_all_cogs():
-        cog_list = [
-            str(p.relative_to(Path("./discordCogs")).with_suffix("")).replace("/", ".")
-            for p in Path("./discordCogs").rglob("*.py")
-        ]
-        return cog_list
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f"{self.bot.user} is ready and online!")
 
-    @discord.slash_command()
-    @discord.is_owner
-    @discord.option("cog", choices=get_all_cogs().pop("core"))
+    owner = discord.SlashCommandGroup("owner", guild_ids=[1413909321326268457])
+
+    @owner.command()
+    @commands.is_owner()
+    @option(
+        "cog",
+        description="Select a cog to unload",
+        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
+    )
     async def unload(self, ctx, cog: str):
         try:
-            self.bot.unload_extension(cog)
+            self.bot.unload_extension(f"discordCogs.{cog}")
         except Exception as e:
             await ctx.respond(f"Failed to unload {cog}\nReason:\n{e}")
-            return
-        await ctx.respond(f"Unloaded {cog}")
+        else:
+            await ctx.respond(f"Unloaded {cog}")
 
-    @discord.slash_command()
-    @discord.is_owner
-    @discord.option("cog", choices=get_all_cogs())
+    @owner.command()
+    @commands.is_owner()
+    @option(
+        "cog",
+        description="Select a cog to reload",
+        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
+    )
     async def reload(self, ctx, cog: str):
         try:
-            discord.bot.reload_extension(cog)
+            self.bot.reload_extension(f"discordCogs.{cog}")
+        except SetupError as e:
+            await ctx.respond(f"Failed to reload (setup) {cog}\nReason:\n{e}")
         except Exception as e:
             await ctx.respond(f"Failed to reload {cog}\nReason:\n{e}")
-            return
-        ctx.respond(f"Reloaded {cog}")
+        else:
+            await ctx.respond(f"Reloaded {cog}")
 
-    @discord.slash_command()
-    @discord.is_owner
-    @discord.option("cog", choices=get_all_cogs().pop("core"))
-    async def load(self, ctx, *cog: str):
+    @owner.command()
+    @commands.is_owner()
+    @option(
+        "cog",
+        description="Select a cog to load",
+        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
+    )
+    async def load(self, ctx, cog: str):
         try:
-            self.bot.load_extension(cog)
+            self.bot.load_extension(f"discordCogs.{cog}")
+        except SetupError as e:
+            await ctx.respond(f"Failed to reload (setup) {cog}\nReason:\n{e}")
         except Exception as e:
             await ctx.respond(f"Failed to load {cog}\nException:\n{e}")
-            return
-        await ctx.respond(f"Loaded {cog}")
+        else:
+            await ctx.respond(f"Loaded {cog}")
 
-    @discord.slash_command()
-    @discord.is_owner
-    async def list_cogs(ctx):
-        message = ""
-        for cog in core.get_all_cogs():
-            message.append(f"{cog}\n")
-        await ctx.reply(message)
+    @owner.command()
+    @commands.is_owner()
+    async def list_cogs(self, ctx):
+        message = " ".join(func.get_all_cogs())
+        await ctx.respond(message)
+
+    @owner.command(name="sync_commands")
+    @commands.is_owner()
+    async def sync_commands(self, ctx):
+        await self.bot.sync_commands()
+        await ctx.respond("commands synced")
+
+    setup = discord.SlashCommandGroup("setup-minecraft")
+
+    @setup.command(name="management-server")
+    async def setup_management(self, ctx):
+        rq_pages = [True, False]
+        title = "Management Server"
+        descriptions = ["", "TLS"]
+        pages = [
+            [
+                {"name": "Numerical IP"},
+                {"name": "Port", "default": 25585},
+                {"name": "Secret"},
+            ],
+            [{"name": "TLS Keystore"}, {"name": "Keystore Password"}],
+        ]
+        m = func.modal(
+            title,
+            pages,
+            descs=descriptions,
+            page_required=rq_pages,
+            confirm_msg="**Optional**: Configure {desc}?",
+        )
+        await ctx.send_modal(m)
+        data = await m.wait_until_done()
+        func.conf_add(["Minecraft", "Management"], "")
+
+        print(data)
+        await ctx.respond("Info Collected :)")
+
+    @setup.command(name="rcon")
+    async def setup_rcon(self, ctx):
+        rq_pages = [True]
+        title = "RCON Info"
+        descriptions = [""]
+        pages = [
+            [
+                {"name": "RCON Port", "default": 25575},
+                {"name": "RCON Password"},
+            ]
+        ]
+        m = func.modal(
+            title,
+            pages,
+            descs=descriptions,
+            page_required=rq_pages,
+            confirm_msg="**Optional**: Configure {desc}?",
+        )
+        await ctx.send_modal(m)
+        data = await m.wait_until_done()
+
+        print(data)
+        await ctx.respond("Info Collected :)")
+
+    @setup.command(name="server")
+    async def setup_rcon(self, ctx):
+        rq_pages = [True]
+        title = "Minecraft Server"
+        descriptions = [""]
+        pages = [
+            [
+                {"name": "Numerical IP"},
+                {"name": "Port", "default": 25585},
+            ]
+        ]
+
+        m = func.modal(
+            title,
+            pages,
+            descs=descriptions,
+            page_required=rq_pages,
+            confirm_msg="**Optional**: Configure {desc}?",
+        )
+        await ctx.send_modal(m)
+        data = await m.wait_until_done()
+
+        print(data)
+        await ctx.respond("Info Collected :)")
 
 
 def setup(bot):
