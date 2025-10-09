@@ -1,10 +1,7 @@
+import discord, asyncio, os
 import tomlkit as tk
 from pathlib import Path
-
-
-import discord
-import asyncio
-from typing import List, Union, Tuple, Dict, Any, Callable, os
+from typing import List, Union, Tuple, Dict, Any, Callable
 
 # ==================== MODAL CLASSES ====================
 
