@@ -110,7 +110,7 @@ class minecraft(commands.Cog):
             )
 
     @tasks.loop(hours=1)
-    async def checkServerUpdates(self):  # TODO Cut down function
+    async def checkServerUpdates(self):
         for guild in self.bot.guilds:
             try:
                 is_enabled = util.conf_get(
@@ -118,7 +118,7 @@ class minecraft(commands.Cog):
                 )
             except:
                 continue
-            if not is_enabled:
+            if is_enabled == False or None:
                 continue
 
             api = util.conf_get(guild.id, keys=["Minecraft", "panel"])
