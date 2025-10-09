@@ -79,6 +79,32 @@ class core(commands.Cog):
 
     setup = discord.SlashCommandGroup("setup-minecraft")
 
+    @setup.command(name="panel")
+    async def setup_panel(self, ctx):
+        rq_pages = [True, False]
+        title = "Panel Ino"
+        descriptions = [""]
+        pages = [
+            [
+                {"name": "Server ID"},
+                {"name": "base url"},
+                {"name": "api key"},
+            ],
+        ]
+        m = func.modal(
+            title,
+            pages,
+            descs=descriptions,
+            page_required=rq_pages,
+            confirm_msg="**Optional**: Configure {desc}?",
+        )
+        await ctx.send_modal(m)
+        data = await m.wait_until_done()
+        for key, value in data.items():
+            func.conf_add(ctx.guild.id, ["Minecraft", "panel"], key, value)
+
+        await ctx.respond("Info Collected :)")
+
     @setup.command(name="management-server")
     async def setup_management(self, ctx):
         rq_pages = [True, False]
