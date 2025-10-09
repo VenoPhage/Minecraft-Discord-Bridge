@@ -91,6 +91,56 @@ class core(commands.Cog):
         await self.bot.sync_commands()
         await ctx.respond("commands synced")
 
+    enable = discord.SlashCommandGroup("enable-minecraft")
+
+    @enable.command(name="updater")
+    async def enable_updater(self, ctx, mode: bool):
+        if mode == False:
+            func.conf_add(ctx.guild.id, ["Minecraft"], "updater-enabled", False)
+            await ctx.respond("Updater disabled")
+            return
+        try:
+            api = func.conf_get(
+                server_id=ctx.guild.id,
+                keys=["Minecraft", "panel"],
+            )
+        except:
+            await ctx.respond(
+                "Cannot enable updater without panel config.\nRun `/setup-minecraft panel`"
+            )
+        if api is None:
+            return
+        func.conf_add(ctx.guild.id, ["Minecraft"], "updater-enabled", True)
+        await ctx.respond("Updater enabled!")
+
+    @enable.command(name="chat")
+    async def enable_updater(self, ctx, mode: bool):
+        if mode == False:
+            func.conf_add(ctx.guild.id, ["Minecraft"], "chat-enabled", False)
+            await ctx.respond("Chat disabled")
+            return
+        try:
+            rcon = func.conf_get(
+                server_id=ctx.guild.id,
+                keys=["Minecraft", "rcon"],
+            )
+        except:
+            rcon = None
+        try:
+            sftp = func.conf_get(
+                server_id=ctx.guild.id,
+                keys=["Minecraft", "sftp"],
+            )
+        except:
+            sftp = None
+
+        if rcon or sftp is None:
+            await ctx.respond(
+                "Cannot enable chat without rcon and sftp config.\nRun `/setup-minecraft sftp` and `/setup-minecraft rcon`\n-#one or both is missing this command doesnt check which."
+            )
+        func.conf_add(ctx.guild.id, ["Minecraft"], "chat-enabled", True)
+        await ctx.respond("Chat enabled!")
+
     setup = discord.SlashCommandGroup("setup-minecraft")
 
     @setup.command(name="panel")
