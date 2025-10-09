@@ -18,12 +18,22 @@ class core(commands.Cog):
 
     @owner.command()
     @commands.is_owner()
-    @option(
-        "cog",
-        description="Select a cog to unload",
-        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
-    )
-    async def unload(self, ctx, cog: str):
+    async def shutdown(self, ctx):
+        await ctx.respond("Shuting down...")
+        await self.bot.close()
+
+    @owner.command()
+    @commands.is_owner()
+    async def unload(
+        self,
+        ctx,
+        cog: str = Option(
+            description="Select a cog to unload",
+            choices=[
+                OptionChoice(name=cog) for cog in func.get_all_cogs()
+            ],  # Ensure this list is not empty
+        ),
+    ):
         try:
             self.bot.unload_extension(f"discordCogs.{cog}")
         except Exception as e:
@@ -33,12 +43,14 @@ class core(commands.Cog):
 
     @owner.command()
     @commands.is_owner()
-    @option(
-        "cog",
-        description="Select a cog to reload",
-        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
-    )
-    async def reload(self, ctx, cog: str):
+    async def reload(
+        self,
+        ctx,
+        cog: str = Option(
+            description="Select a cog to reload",
+            choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
+        ),
+    ):
         try:
             self.bot.reload_extension(f"discordCogs.{cog}")
         except SetupError as e:
@@ -50,12 +62,14 @@ class core(commands.Cog):
 
     @owner.command()
     @commands.is_owner()
-    @option(
-        "cog",
-        description="Select a cog to load",
-        choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
-    )
-    async def load(self, ctx, cog: str):
+    async def load(
+        self,
+        ctx,
+        cog: str = Option(
+            description="Select a cog to load",
+            choices=[OptionChoice(name=cog) for cog in func.get_all_cogs()],
+        ),
+    ):
         try:
             self.bot.load_extension(f"discordCogs.{cog}")
         except SetupError as e:
