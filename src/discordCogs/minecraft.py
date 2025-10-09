@@ -90,11 +90,17 @@ class minecraft(commands.Cog):
         self.checkServerUpdates
         await ctx.respond("Checking for updates...")
 
-    @commands.Cog.listener()  # TODO: Only check if bridge chat enabled
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
-        rcon = util.get_conf(["Minecraft", "rcon"])
+        mc_conf = util.conf_get(message.guild.id, ["Minecraft"])
+        if mc_conf["chat_enabled"] == False or None:
+            return
+        if message.channel.id != mc_conf["chat_channel_id"]:
+            return
+
+        rcon = util.conf_get(message.guild.id, ["Minecraft", "rcon"])
         if rcon is None:
             return
 
