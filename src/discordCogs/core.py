@@ -114,31 +114,42 @@ class core(commands.Cog):
         await ctx.respond("Updater enabled!")
 
     @enable.command(name="chat")
-    async def enable_updater(self, ctx, mode: bool):
-        if mode == False:
-            func.conf_add(ctx.guild.id, ["Minecraft"], "chat-enabled", False)
-            await ctx.respond("Chat disabled")
+    async def enable_chat(self, ctx, mode: bool, chat_channel: discord.TextChannel):
+        if mode:
+            if chat_channel is None:
+                await ctx.respond(
+                    "Please select a channel for messages to be sent and received from"
+                )
+                return
+        else:
+            func.conf_add(ctx.guild.id, ["Minecraft"], "updater-enabled", False)
+            await ctx.respond("Updater disabled")
             return
-        try:
-            rcon = func.conf_get(
-                server_id=ctx.guild.id,
-                keys=["Minecraft", "rcon"],
-            )
-        except:
-            rcon = None
-        try:
-            sftp = func.conf_get(
-                server_id=ctx.guild.id,
-                keys=["Minecraft", "sftp"],
-            )
-        except:
-            sftp = None
 
-        if rcon or sftp is None:
+        sftp = func.conf_get(
+            server_id=ctx.guild.id,
+            keys=["Minecraft", "sftp"],
+        )
+        sftp_command = self.bot.get_application_command("setup-minecraft sftp")
+        if sftp == None:
             await ctx.respond(
-                "Cannot enable chat without rcon and sftp config.\nRun `/setup-minecraft sftp` and `/setup-minecraft rcon`\n-#one or both is missing this command doesnt check which."
+                f"Cannot enable updater without panel config.\nRun {sftp_command.mention}"
             )
+            return
+
+        rcon = func.conf_get(
+            server_id=ctx.guild.id,
+            keys=["Minecraft", "rcon"],
+        )
+        rcon_command = self.bot.get_application_command("setup-minecraft rcon")
+        if rcon == None:
+            await ctx.respond(
+                f"Cannot enable updater without panel config.\nRun {rcon_command.mention}"
+            )
+            return
+
         func.conf_add(ctx.guild.id, ["Minecraft"], "chat-enabled", True)
+        func.conf_add(ctx.guild.id["Minecraft"], "chat_channel_id", chat_channel.id)
         await ctx.respond("Chat enabled!")
 
     setup = discord.SlashCommandGroup("setup-minecraft")
