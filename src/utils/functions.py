@@ -4,7 +4,7 @@ from pathlib import Path
 
 import discord
 import asyncio
-from typing import List, Union, Tuple, Dict, Any, Callable
+from typing import List, Union, Tuple, Dict, Any, Callable, os
 
 # ==================== MODAL CLASSES ====================
 
@@ -529,7 +529,11 @@ def conf_add(server_id: int, keys: list, name: str, value: Any, comment: str = N
     if comment is not None:
         current_level[name].comment(comment)
 
-    with open(f"data/server-configs/{str(server_id)}.toml", "w") as f:
+    directory = "data/server-configs"
+    os.makedirs(directory, exist_ok=True)
+
+    file_path = os.path.join(directory, f"{server_id}.toml")
+    with open(file_path, "w") as f:
         f.write(tk.dumps(cDoc))
 
 
