@@ -101,9 +101,8 @@ class core(commands.Cog):
         )
         await ctx.send_modal(m)
         data = await m.wait_until_done()
-        func.conf_add(["Minecraft", "Management"], "")
-
-        print(data)
+        for key, value in data.items():
+            func.conf_add(ctx.guild.id, ["Minecraft", "panel"], key, value)
         await ctx.respond("Info Collected :)")
 
     @setup.command(name="rcon")
@@ -127,7 +126,8 @@ class core(commands.Cog):
         await ctx.send_modal(m)
         data = await m.wait_until_done()
 
-        print(data)
+        for key, value in data.items():
+            func.conf_add(ctx.guild.id, ["Minecraft", "panel"], key, value)
         await ctx.respond("Info Collected :)")
 
     @setup.command(name="server")
@@ -152,7 +152,8 @@ class core(commands.Cog):
         await ctx.send_modal(m)
         data = await m.wait_until_done()
 
-        print(data)
+        for key, value in data.items():
+            func.conf_add(ctx.guild.id, ["Minecraft", "panel"], key, value)
         await ctx.respond("Info Collected :)")
 
 

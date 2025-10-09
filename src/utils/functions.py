@@ -477,21 +477,141 @@ def simple_modal(
 # ==================== ADDITIONAL UTILITY FUNCTIONS ====================
 
 
-def conf_add(keys: list, name: str, value, comment=str(None)):
+def conf_add(server_id: int, keys: list, name: str, value: Any, comment: str = None):
     """
-    Add a new configuration entry to the TOML configuration file.
+    Add a new configuration entry to a server-specific TOML configuration file.
 
-    This function reads the current configuration, adds a new key-value pair
-    (with an optional comment) to the specified section, and writes the updated
+    This function reads the current configuration for the specified server,
+    creates any necessary intermediate tables if keys don't exist, adds a new
+    key-value pair (with an optional comment), and writes the updated
     configuration back to the file.
+
+    Args:
+        server_id (int): The ID of the server for which to modify configuration.
+        keys (list): Hierarchical keys representing the configuration section path.
+                     Example: ['database', 'credentials'] for the [database.credentials] section.
+        name (str): The name of the configuration key to add.
+        value (Any): The value to assign to the configuration key. Must be a TOML-supported type.
+        comment (str, optional): Comment to add above the configuration entry.
+                                Defaults to None.
+
+    Raises:
+        FileNotFoundError: If the directory structure doesn't exist and cannot be created.
+        PermissionError: If lacking write permissions for the configuration file.
+        tomlkit.exceptions.TOMLKitError: If TOML parsing/serialization fails.
+
+    Side Effects:
+        - Modifies the server-specific TOML file on disk
+        - Creates the file and any intermediate tables if they don't exist
+
+    Example:
+        >>> conf_add(12345, ['server'], 'host', 'localhost', 'Server hostname')
+        # Creates/updates data/server-configs/12345.toml:
+        # [server]
+        # host = "localhost" # Server hostname
+
+        >>> conf_add(12345, ['db', 'prod'], 'port', 5432)
+        # Creates/updates data/server-configs/12345.toml:
+        # [db.prod]
+        # port = 5432
+    """
+    cDoc = conf_get(server_id=server_id)
+
+    # Navigate to or create the nested structure
+    current_level = cDoc
+    for key in keys:
+        if key not in current_level:
+            current_level[key] = tk.table()
+        current_level = current_level[key]
+
+    # Add the key-value pair
+    current_level[name] = value
+    if comment is not None:
+        current_level[name].comment(comment)
+
+    with open(f"data/server-configs/{str(server_id)}.toml", "w") as f:
+        f.write(tk.dumps(cDoc))
+
+
+def conf_get(server_id: int, keys: list = None) -> Union[dict, Any]:
+    """
+    Retrieve configuration values from a server-specific TOML configuration file.
+
+    This function reads the server-specific TOML file and returns either the entire
+    configuration dictionary or a nested value specified by a sequence of keys.
+    If the file doesn't exist, returns an empty document. If any keys in the path
+    don't exist, returns an empty document for that section.
+
+    Args:
+        server_id (int): The ID of the server for which to read configuration.
+        keys (list, optional): A list of keys representing the hierarchical path
+            to the desired configuration value. If empty or None, returns the entire
+            configuration. Defaults to None.
+
+    Returns:
+        Union[dict, Any]: The entire configuration dictionary if keys is empty/None,
+            otherwise the value at the specified key path. Returns empty document
+            or empty tables for non-existent paths.
+
+    Raises:
+        tomlkit.exceptions.ParseError: If the TOML file contains syntax errors.
+
+    Example:
+        Given a 12345.toml with content:
+            [database]
+            host = "localhost"
+            port = 5432
+
+        >>> conf_get(12345)
+        {'database': {'host': 'localhost', 'port': 5432}}
+
+        >>> conf_get(12345, ['database', 'host'])
+        'localhost'
+
+        >>> conf_get(12345, ['nonexistent', 'key'])
+        # Returns an empty table
+
+    Note:
+        - The function expects server configs in 'data/server-configs/{server_id}.toml'
+        - Returns empty documents/tables for non-existent files or keys rather than raising errors
+    """
+    if keys is None:
+        keys = []
+
+    try:
+        with open(f"data/server-configs/{str(server_id)}.toml", "r") as f:
+            cDoc = tk.parse(f.read())
+    except FileNotFoundError:
+        cDoc = tk.document()
+        return cDoc
+
+    # Navigate through keys, creating empty tables for non-existent keys
+    current_level = cDoc
+    for key in keys:
+        if key in current_level:
+            current_level = current_level[key]
+        else:
+            # Key doesn't exist, return empty table
+            return tk.table()
+
+    return current_level
+
+
+def bot_conf_add(keys: list, name: str, value: Any, comment: str = None):
+    """
+    Add a new configuration entry to the main bot TOML configuration file.
+
+    This function reads the current bot configuration, creates any necessary
+    intermediate tables if keys don't exist, adds a new key-value pair
+    (with an optional comment), and writes the updated configuration back to the file.
 
     Args:
         keys (list): Hierarchical keys representing the configuration section path.
                      Example: ['database', 'credentials'] for the [database.credentials] section.
         name (str): The name of the configuration key to add.
-        value (any): The value to assign to the configuration key. Must be a TOML-supported type.
+        value (Any): The value to assign to the configuration key. Must be a TOML-supported type.
         comment (str, optional): Comment to add above the configuration entry.
-                                Defaults to str(None) (string "None").
+                                Defaults to None.
 
     Raises:
         FileNotFoundError: If the config.toml file does not exist when reading.
@@ -500,48 +620,57 @@ def conf_add(keys: list, name: str, value, comment=str(None)):
 
     Side Effects:
         - Modifies the 'config.toml' file on disk
-        - Creates the file if it doesn't exist (implied by write mode)
+        - Creates the file and any intermediate tables if they don't exist
 
     Example:
-        >>> conf_add(['server'], 'host', 'localhost', 'Server hostname')
-        # Adds to config.toml:
+        >>> bot_conf_add(['server'], 'host', 'localhost', 'Server hostname')
+        # Creates/updates config.toml:
         # [server]
         # host = "localhost" # Server hostname
 
-        >>> conf_add(['db', 'prod'], 'port', 5432)
-        # Adds to config.toml:
+        >>> bot_conf_add(['db', 'prod'], 'port', 5432)
+        # Creates/updates config.toml:
         # [db.prod]
         # port = 5432
     """
-    cDoc = get_conf(keys=keys)
-    tab = tk.table()
-    tab.add(name, value)
+    cDoc = bot_conf_get()
+
+    # Navigate to or create the nested structure
+    current_level = cDoc
+    for key in keys:
+        if key not in current_level:
+            current_level[key] = tk.table()
+        current_level = current_level[key]
+
+    # Add the key-value pair
+    current_level[name] = value
     if comment is not None:
-        tab.comment(comment)
-    cDoc[name] = value
+        current_level[name].comment(comment)
+
     with open("config.toml", "w") as f:
         f.write(tk.dumps(cDoc))
 
 
-def get_conf(keys: list = []):
+def bot_conf_get(keys: list = None) -> Union[dict, Any]:
     """
-    Retrieve configuration values from a TOML configuration file.
+    Retrieve configuration values from the main bot TOML configuration file.
 
     This function reads the 'config.toml' file and returns either the entire
     configuration dictionary or a nested value specified by a sequence of keys.
+    If the file doesn't exist, returns an empty document. If any keys in the path
+    don't exist, returns an empty document for that section.
 
     Args:
         keys (list, optional): A list of keys representing the hierarchical path
-            to the desired configuration value. If empty, returns the entire
-            configuration. Defaults to an empty list.
+            to the desired configuration value. If empty or None, returns the entire
+            configuration. Defaults to None.
 
     Returns:
-        dict or any: The entire configuration dictionary if keys is empty,
-            otherwise the value at the specified key path.
+        Union[dict, Any]: The entire configuration dictionary if keys is empty/None,
+            otherwise the value at the specified key path. Returns empty document
+            or empty tables for non-existent paths.
 
     Raises:
-        FileNotFoundError: If 'config.toml' does not exist in the current directory.
-        KeyError: If any key in the sequence does not exist in the configuration.
         tomlkit.exceptions.ParseError: If the TOML file contains syntax errors.
 
     Example:
@@ -553,26 +682,39 @@ def get_conf(keys: list = []):
             [api]
             endpoints = ["/v1/auth", "/v1/data"]
 
-        >>> get_conf()
+        >>> bot_conf_get()
         {'database': {'host': 'localhost', 'port': 5432}, 'api': {'endpoints': ['/v1/auth', '/v1/data']}}
 
-        >>> get_conf(['database', 'host'])
+        >>> bot_conf_get(['database', 'host'])
         'localhost'
 
-        >>> get_conf(['api', 'endpoints', 0])
-        '/v1/auth'
+        >>> bot_conf_get(['nonexistent', 'key'])
+        # Returns an empty table
 
     Note:
         - The function expects 'config.toml' in the current working directory
-        - For nested access, keys should be provided in hierarchical order
-        - List indices can be used in keys to access specific list elements
+        - Returns empty documents/tables for non-existent files or keys rather than raising errors
     """
-    with open("config.toml", "r") as f:
-        cDoc = tk.parse(f.read())
-    if len(keys) >= 1:
-        for key in keys:
-            cDoc = cDoc[key]
-    return cDoc
+    if keys is None:
+        keys = []
+
+    try:
+        with open("config.toml", "r") as f:
+            cDoc = tk.parse(f.read())
+    except FileNotFoundError:
+        cDoc = tk.document()
+        return cDoc
+
+    # Navigate through keys, creating empty tables for non-existent keys
+    current_level = cDoc
+    for key in keys:
+        if key in current_level:
+            current_level = current_level[key]
+        else:
+            # Key doesn't exist, return empty table
+            return tk.table()
+
+    return current_level
 
 
 def get_all_cogs():

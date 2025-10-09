@@ -12,7 +12,7 @@ if not os.path.exists("data"):
     os.makedirs("data")  # not included in git so its created
 
 try:
-    cDoc = func.get_conf()
+    cDoc = func.bot_conf_get()
 except FileNotFoundError:  # file doesnt exist, so create one
     with open("config.toml", "a"):
         pass
@@ -22,10 +22,10 @@ except Exception as e:
     )  # unknown error, just exit and allow user to diagnose
 
 try:
-    token = func.get_conf(keys=["Discord", "Token"])
+    token = func.bot_conf_get(keys=["Discord", "Token"])
 except:
     token = input("Enter Discord bot Token:")
-    func.conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
+    func.bot_conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
 
 bot = discord.Bot(intents=discord.Intents.all())
 
@@ -35,7 +35,7 @@ try:
     bot.run(token)
 except (TypeError, discord.LoginFailure):
     token = input("Enter Discord bot Token:")
-    func.conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
+    func.bot_conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
 except Exception as e:
     exit(f"Unhandled exception\n{e}")
 finally:
