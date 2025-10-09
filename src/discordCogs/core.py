@@ -99,17 +99,18 @@ class core(commands.Cog):
             func.conf_add(ctx.guild.id, ["Minecraft"], "updater-enabled", False)
             await ctx.respond("Updater disabled")
             return
-        try:
-            api = func.conf_get(
-                server_id=ctx.guild.id,
-                keys=["Minecraft", "panel"],
-            )
-        except:
+
+        api = func.conf_get(
+            server_id=ctx.guild.id,
+            keys=["Minecraft", "panel"],
+        )
+        panel_command = self.bot.get_application_command("setup-minecraft panel")
+        if api == None:
             await ctx.respond(
-                "Cannot enable updater without panel config.\nRun `/setup-minecraft panel`"
+                f"Cannot enable updater without panel config.\nRun {panel_command.mention}`"
             )
-        if api is None:
             return
+
         func.conf_add(ctx.guild.id, ["Minecraft"], "updater-enabled", True)
         await ctx.respond("Updater enabled!")
 
