@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import utils.functions as func
-from discord.commands import option, OptionChoice
+from discord.commands import Option, OptionChoice
 from utils.exception import *
 
 
