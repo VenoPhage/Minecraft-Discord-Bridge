@@ -1,56 +1,52 @@
-import toml, os
-from discordInit import *
-
+import os, discord
+import utils.functions as func
 
 if os.path.exists("src"):
-    os.chdir("src")
+    os.chdir("src")  # if running from base instead of source
 if not os.path.exists("main.py"):
-    exit("main.py not found, check if you are in the correct directory")
+    exit(
+        "main.py not found, check if you are in the correct directory"
+    )  # if this doesn't exist running dir is bad
+
+if not os.path.exists("data"):
+    os.makedirs("data")  # not included in git so its created
+
 try:
-    with open("config.toml") as f:
-        config = toml.load(f)
-except FileNotFoundError:
-    config = {"version": -1}
-    with open("config.toml", "w") as f:
-        f.write(toml.dumps(config))
-
-
-match config["version"]:
-    case 0:
+    cDoc = func.bot_conf_get()
+except FileNotFoundError:  # file doesnt exist, so create one
+    with open("config.toml", "a"):
         pass
-    case _:
-        toml_string = """version = 0 # DO NOT CHANGE
+except Exception as e:
+    exit(
+        f"Error reading or parsing config.toml, suggested fix rename config.toml and restart\nException:\n{e}"
+    )  # unknown error, just exit and allow user to diagnose
 
-[minecraft]
-host = '127.0.0.1' #default: 127.0.0.1
-chat_method_get = 'sftp' #for getting messages from minecraft. Options: 'sftp', 'management_server' (maybe)
-chat_method_send = 'rcon' #for sending messages to minecraft. Options: 'rcon', 'management_server' (maybe)
+try:
+    token = func.bot_conf_get(keys=["Discord", "Token"])
+except:
+    token = input("Enter Discord bot Token:")
+    func.bot_conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
 
-[minecraft.management_server]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 25585 #default: 25585
-secret = ''
+bot = discord.Bot(intents=discord.Intents.all())
 
-[minecraft.sftp]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 22 #default: 22
-username = ''
-password = ''
+bot.load_extension(
+    "discordCogs.core"
+)  # MUST load if it fails the bot will not function
 
-[minecraft.rcon]
-host = '0' #default: 0 (0 uses minecraft host)
-port = 25575 #default: 25575
-password = ''
-
-[discord]
-use_webhook = true #default: true
-token = ''  #required
-channel_id = '' #required
-webhook_url = '' #required if use_webhook is true  
-"""
-        with open("config.toml", "w") as f:
-            f.write(toml_string)
-        exit("config.toml created, please edit it and run the script again")
-
-
-discordInit(config["discord"]["token"])
+cogs = func.get_all_cogs()  # TODO: change method to config get
+for cog in cogs:
+    if cog == "core":  # loaded already
+        pass
+    try:
+        bot.load_extension(f"discordCogs.{cog}")
+    except Exception as e:
+        print(f"failed to load {cog}, Reason:\n{e}")
+try:
+    bot.run(token)
+except (TypeError, discord.LoginFailure):
+    token = input("Enter Discord bot Token:")
+    func.bot_conf_add(keys=["Discord"], name="Token", value=token, comment="Required")
+except Exception as e:
+    exit(f"Unhandled exception\n{e}")
+finally:
+    bot.run(token)
