@@ -29,8 +29,18 @@ except:
 
 bot = discord.Bot(intents=discord.Intents.all())
 
-bot.load_extension("discordCogs.core")
+bot.load_extension(
+    "discordCogs.core"
+)  # MUST load if it fails the bot will not function
 
+cogs = func.get_all_cogs()  # TODO: change method to config get
+for cog in cogs:
+    if cog == "core":  # loaded already
+        pass
+    try:
+        bot.load_extension(f"discordCogs.{cog}")
+    except Exception as e:
+        print(f"failed to load {cog}, Reason:\n{e}")
 try:
     bot.run(token)
 except (TypeError, discord.LoginFailure):
